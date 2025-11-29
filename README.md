@@ -2,6 +2,7 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Research Report](https://img.shields.io/badge/Read-Research%20Report-red.svg)](report.pdf)
 
 A comprehensive Reinforcement Learning framework for control systems using ControlGym. Features PPO and SAC algorithms, hybrid RL-PD control, reward shaping, and automated experiment tracking.
 
