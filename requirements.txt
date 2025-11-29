@@ -1,3 +1,7 @@
 controlgym
 stable-baselines3
 torch
+matplotlib
+pandas
+numpy
+streamlit
