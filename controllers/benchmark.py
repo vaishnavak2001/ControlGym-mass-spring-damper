@@ -15,6 +15,39 @@ from classical_controllers import (
 )
 import numpy as np
 
+from mpc_controller import MPCController
+
+def run_mpc_simulation(env, mpc_controller, n_steps=1000):
+    """
+    Run simulation with MPC controller.
+    """
+    obs, _ = env.reset()
+    
+    states = []
+    actions = []
+    rewards = []
+    
+    for _ in range(n_steps):
+        # MPC control
+        action = mpc_controller.compute(obs)
+        
+        # Apply action
+        obs, reward, done, truncated, _ = env.step(np.array([action]))
+        
+        # Store data
+        states.append(obs.copy())
+        actions.append(action)
+        rewards.append(reward)
+        
+        if done or truncated:
+            obs, _ = env.reset()
+    
+    return {
+        'states': np.array(states),
+        'actions': np.array(actions),
+        'rewards': np.array(rewards),
+        'total_reward': np.sum(rewards)
+    }
 
 def main():
     parser = argparse.ArgumentParser(description='Benchmark Classical vs RL Controllers')
@@ -35,13 +68,13 @@ def main():
     print(f"{'='*60}\n")
     
     # 1. PID Controller
-    print("[1/3] Running PID controller...")
+    print("[1/4] Running PID controller...")
     pid = PIDController(kp=0.5, ki=0.01, kd=0.2, dt=0.1)
     pid_results = run_pid_simulation(env, pid, n_steps=args.n_steps, setpoint=0.0)
     print(f"  Total reward: {pid_results['total_reward']:.2f}")
     
     # 2. LQR Controller
-    print("[2/3] Running LQR controller...")
+    print("[2/4] Running LQR controller...")
     A, B = get_toy_system_matrices()
     Q = np.array([[1.0]])   # 1D state cost
     R = np.array([[0.1]])    # Control effort penalty
@@ -50,8 +83,14 @@ def main():
     lqr_results = run_lqr_simulation(env, lqr, n_steps=args.n_steps)
     print(f"  Total reward: {lqr_results['total_reward']:.2f}")
     
-    # 3. RL Controller (PPO)
-    print("[3/3] Running PPO controller...")
+    # 3. MPC Controller
+    print("[3/4] Running MPC controller (Sampling-based)...")
+    mpc = MPCController(A, B, Q, R, horizon=10, n_samples=500)
+    mpc_results = run_mpc_simulation(env, mpc, n_steps=args.n_steps)
+    print(f"  Total reward: {mpc_results['total_reward']:.2f}")
+    
+    # 4. RL Controller (PPO)
+    print("[4/4] Running PPO controller...")
     if os.path.exists(args.rl_model):
         ppo = PPO.load(args.rl_model)
         ppo_results = run_rl_simulation(env, ppo, n_steps=args.n_steps)
@@ -66,6 +105,7 @@ def main():
     results_dict = {
         'PID': pid_results,
         'LQR': lqr_results,
+        'MPC': mpc_results,
     }
     if ppo_results:
         results_dict['PPO'] = ppo_results

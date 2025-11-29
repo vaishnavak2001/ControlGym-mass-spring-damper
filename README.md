@@ -73,6 +73,7 @@ We explore how RL agents learn to control this system without prior knowledge of
 *   **SAC (Soft Actor-Critic):** An off-policy algorithm that maximizes both expected reward and entropy (randomness). Highly sample-efficient and robust to local optima.
 *   **PID (Proportional-Integral-Derivative):** The workhorse of industrial control. Computes action based on current error, accumulated error, and rate of change.
 *   **LQR (Linear Quadratic Regulator):** An optimal control strategy that minimizes a cost function (state deviation + energy) for linear systems. Requires a known mathematical model.
+*   **MPC (Model Predictive Control):** A control strategy that optimizes a sequence of future actions over a finite horizon. We implement a Sampling-based MPC (Random Shooting) that is robust and solver-free.
 
 ---
 

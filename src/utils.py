@@ -145,3 +145,22 @@ def plot_action_profile(actions, save_path):
         plt.tight_layout()
         plt.savefig(os.path.join(save_path, f'action_{i}_profile.png'))
         plt.close()
+
+def save_gif(frames, save_path, fps=30):
+    """
+    Save a list of frames (numpy arrays) as a GIF.
+    Requires 'imageio' to be installed.
+    
+    Args:
+        frames: List of numpy arrays (H, W, C)
+        save_path: Output path (e.g., 'animation.gif')
+        fps: Frames per second
+    """
+    try:
+        import imageio
+        imageio.mimsave(save_path, frames, fps=fps)
+        print(f"GIF saved to {save_path}")
+    except ImportError:
+        print("Error: imageio not installed. Cannot save GIF.")
+        print("Run: pip install imageio")
+
