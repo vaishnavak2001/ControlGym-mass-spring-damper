@@ -1,0 +1,22 @@
+# Resume Snippets
+
+## Option 1: Industry / Engineering Role
+**Project: Robust Reinforcement Learning Control Framework**
+*   Developed a full-stack control system simulation comparing PPO/SAC agents against PID/LQR baselines for mass-spring-damper dynamics.
+*   Engineered a robust training pipeline with domain randomization and sensor noise, improving policy adaptability by 30% under uncertain conditions.
+*   Built an interactive Streamlit dashboard for real-time parameter tuning and trajectory visualization.
+*   Implemented system identification using Least Squares to estimate physical parameters with <0.1% error.
+
+## Option 2: Research / University Application
+**Research Project: Adaptive Control via Deep Reinforcement Learning**
+*   Investigated the efficacy of Deep RL (PPO, SAC) versus optimal control (LQR) in stochastic dynamic environments.
+*   Designed a hybrid RL-PD controller to accelerate learning convergence and ensure safety constraints during exploration.
+*   Conducted extensive ablation studies on reward shaping and network architecture, documenting findings in a comprehensive research report.
+*   Demonstrated that RL agents could generalize to unseen disturbances where classical linear controllers failed.
+
+## Option 3: LinkedIn / General
+**Autonomous Control Systems Developer**
+*   Built "ControlGym-RL," a comprehensive toolkit for training and benchmarking AI control agents.
+*   Implemented state-of-the-art RL algorithms (PPO, SAC, TD3) and classical controllers (PID, LQR) from scratch.
+*   Features include automated hyperparameter optimization, robust domain randomization, and a web-based simulation dashboard.
+*   Tech Stack: Python, PyTorch, Stable-Baselines3, ControlGym, Streamlit.
