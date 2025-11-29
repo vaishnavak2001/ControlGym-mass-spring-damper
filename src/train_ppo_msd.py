@@ -3,6 +3,7 @@ import os
 import csv
 import gymnasium as gym
 import numpy as np
+import torch
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback, BaseCallback
 from stable_baselines3.common.monitor import Monitor
@@ -51,6 +52,76 @@ class RewardShapingWrapper(gym.Wrapper):
         info['shaped_reward'] = shaped_reward
         
         return obs, shaped_reward, done, truncated, info
+
+class OptimizedRewardWrapper(gym.Wrapper):
+    """Advanced reward shaping for faster convergence.
+    
+    Features:
+    - Distance-based exponential reward
+    - Velocity-aware penalty scaling
+    - Settling time bonus for staying near target
+    - Progressive difficulty reduction
+    """
+    def __init__(self, env, target_threshold=0.1, settling_steps=50):
+        super().__init__(env)
+        self.target_threshold = target_threshold
+        self.settling_steps = settling_steps
+        self.steps_at_target = 0
+        self.total_steps = 0
+        
+    def reset(self, **kwargs):
+        self.steps_at_target = 0
+        self.total_steps = 0
+        return self.env.reset(**kwargs)
+    
+    def step(self, action):
+        obs, reward, done, truncated, info = self.env.step(action)
+        self.total_steps += 1
+        
+        # Extract state information
+        obs_array = np.array(obs) if not isinstance(obs, np.ndarray) else obs
+        
+        # Distance to target (assuming target is zero)
+        if obs_array.ndim == 0 or len(obs_array) == 1:
+            position = obs_array[0] if len(obs_array) > 0 else obs_array
+            velocity = 0.0
+        else:
+            position = obs_array[0]
+            velocity = obs_array[1] if len(obs_array) > 1 else 0.0
+        
+        distance = abs(position)
+        
+        # Distance-based exponential reward (closer to target = higher reward)
+        distance_reward = np.exp(-5.0 * distance)
+        
+        # Velocity-aware penalty (penalize high velocity when far from target)
+        velocity_penalty = abs(velocity) * distance
+        
+        # Settling time bonus (reward for staying near target)
+        if distance < self.target_threshold:
+            self.steps_at_target += 1
+            settling_bonus = min(self.steps_at_target / self.settling_steps, 1.0)
+        else:
+            self.steps_at_target = 0
+            settling_bonus = 0.0
+        
+        # Progressive difficulty (reduce shaping as agent improves)
+        progress_factor = min(self.total_steps / 1000, 1.0)  # Full shaping for first 1000 steps
+        
+        # Combined optimized reward
+        optimized_reward = (
+            reward +  # Original reward
+            distance_reward * (1.0 - 0.5 * progress_factor) +  # Distance shaping (reduces over time)
+            settling_bonus * 2.0 +  # Settling bonus
+            -0.1 * velocity_penalty  # Velocity penalty
+        )
+        
+        # Store metrics
+        info['distance'] = float(distance)
+        info['settling_bonus'] = float(settling_bonus)
+        info['optimized_reward'] = float(optimized_reward)
+        
+        return obs, optimized_reward, done, truncated, info
 
 class PDController:
     """Classical PD controller for linear systems."""
@@ -171,6 +242,9 @@ def main():
     parser.add_argument('--kp', type=float, default=1.0, help='PD controller proportional gain')
     parser.add_argument('--kd', type=float, default=0.5, help='PD controller derivative gain')
     parser.add_argument('--lambda_pd', type=float, default=0.3, help='PD weighting (0=RL-only, 1=PD-only)')
+    parser.add_argument('--use_optimized_reward', action='store_true', help='Use optimized reward shaping for faster convergence')
+    parser.add_argument('--policy_layers', type=str, default='64,64', help='Neural network hidden layers (comma-separated, e.g., "64,64" or "128,128,64")')
+    parser.add_argument('--activation', type=str, default='tanh', choices=['tanh', 'relu', 'elu'], help='Activation function')
     args = parser.parse_args()
 
     os.makedirs(args.log_dir, exist_ok=True)
@@ -184,7 +258,11 @@ def main():
         return
 
     # Wrap with reward shaping
-    env = RewardShapingWrapper(env, alpha=args.alpha, beta=args.beta)
+    if args.use_optimized_reward:
+        env = OptimizedRewardWrapper(env, target_threshold=0.1, settling_steps=50)
+        print("Using optimized reward shaping for faster convergence")
+    else:
+        env = RewardShapingWrapper(env, alpha=args.alpha, beta=args.beta)
     
     # Optionally wrap with hybrid controller
     if args.enable_hybrid:
@@ -195,11 +273,24 @@ def main():
     env = Monitor(env, args.log_dir)
     env = DummyVecEnv([lambda: env])
 
-    # Initialize PPO
+    # Custom policy network configuration
+    net_arch = [int(x) for x in args.policy_layers.split(',')]
+    policy_kwargs = dict(
+        net_arch=dict(pi=net_arch, vf=net_arch),
+        activation_fn={
+            'tanh': torch.nn.Tanh,
+            'relu': torch.nn.ReLU,
+            'elu': torch.nn.ELU
+        }[args.activation]
+    )
+    print(f"Policy network: layers={net_arch}, activation={args.activation}")
+
+    # Initialize PPO with custom network
     model = PPO(
         "MlpPolicy",
         env,
         learning_rate=args.learning_rate,
+        policy_kwargs=policy_kwargs,
         verbose=1,
         seed=args.seed
     )
