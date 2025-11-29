@@ -52,6 +52,81 @@ class RewardShapingWrapper(gym.Wrapper):
         
         return obs, shaped_reward, done, truncated, info
 
+class PDController:
+    """Classical PD controller for linear systems."""
+    def __init__(self, kp=1.0, kd=0.5):
+        self.kp = kp  # Proportional gain
+        self.kd = kd  # Derivative gain
+    
+    def compute_action(self, state):
+        """Compute PD control action.
+        Assumes state is [position, velocity] or just [position].
+        """
+        state = np.array(state) if not isinstance(state, np.ndarray) else state
+        
+        # Handle 1D or 2D states
+        if state.ndim == 0 or len(state) == 1:
+            # Only position available, assume velocity is 0
+            position = state[0] if len(state) > 0 else state
+            velocity = 0.0
+        else:
+            position = state[0]
+            velocity = state[1] if len(state) > 1 else 0.0
+        
+        # PD control: u = -Kp * position - Kd * velocity
+        action = -self.kp * position - self.kd * velocity
+        return action
+
+class HybridControllerWrapper(gym.Wrapper):
+    """Wrapper that combines RL action with PD controller action."""
+    def __init__(self, env, pd_controller, lambda_pd=0.3):
+        super().__init__(env)
+        self.pd_controller = pd_controller
+        self.lambda_pd = lambda_pd  # Weight for PD action (0=RL-only, 1=PD-only)
+        self.rl_actions = []
+        self.pd_actions = []
+        self.hybrid_actions = []
+    
+    def step(self, rl_action):
+        # Compute PD action based on current state
+        # We need to get the state before stepping
+        # For this, we'll use the last observation stored
+        if hasattr(self, '_last_obs'):
+            pd_action = self.pd_controller.compute_action(self._last_obs)
+        else:
+            pd_action = 0.0
+        
+        # Combine RL and PD actions
+        rl_action_val = np.array(rl_action) if not isinstance(rl_action, np.ndarray) else rl_action
+        hybrid_action = (1 - self.lambda_pd) * rl_action_val + self.lambda_pd * pd_action
+        
+        # Log actions (extract scalar if array)
+        self.rl_actions.append(float(rl_action_val.item() if hasattr(rl_action_val, 'item') else rl_action_val))
+        self.pd_actions.append(float(pd_action))
+        self.hybrid_actions.append(float(hybrid_action.item() if hasattr(hybrid_action, 'item') else hybrid_action))
+        
+        # Execute hybrid action
+        obs, reward, done, truncated, info = self.env.step(hybrid_action)
+        
+        # Store observation for next step
+        self._last_obs = obs
+        
+        # Store action info
+        info['rl_action'] = float(rl_action_val.item() if hasattr(rl_action_val, 'item') else rl_action_val)
+        info['pd_action'] = float(pd_action)
+        info['hybrid_action'] = float(hybrid_action.item() if hasattr(hybrid_action, 'item') else hybrid_action)
+        
+        return obs, reward, done, truncated, info
+    
+    def reset(self, **kwargs):
+        obs = self.env.reset(**kwargs)
+        if isinstance(obs, tuple):
+            self._last_obs = obs[0]
+            return obs
+        else:
+            self._last_obs = obs
+            return obs
+
 class CustomLogCallback(BaseCallback):
     def __init__(self, log_dir, verbose=0):
         super(CustomLogCallback, self).__init__(verbose)
@@ -92,6 +167,10 @@ def main():
     parser.add_argument('--alpha', type=float, default=0.01, help='Reward shaping: state deviation penalty')
     parser.add_argument('--beta', type=float, default=0.01, help='Reward shaping: control effort penalty')
     parser.add_argument('--plot_dir', type=str, default='plots', help='Plot directory')
+    parser.add_argument('--enable_hybrid', action='store_true', help='Enable hybrid RL-PD controller')
+    parser.add_argument('--kp', type=float, default=1.0, help='PD controller proportional gain')
+    parser.add_argument('--kd', type=float, default=0.5, help='PD controller derivative gain')
+    parser.add_argument('--lambda_pd', type=float, default=0.3, help='PD weighting (0=RL-only, 1=PD-only)')
     args = parser.parse_args()
 
     os.makedirs(args.log_dir, exist_ok=True)
@@ -106,6 +185,13 @@ def main():
 
     # Wrap with reward shaping
     env = RewardShapingWrapper(env, alpha=args.alpha, beta=args.beta)
+    
+    # Optionally wrap with hybrid controller
+    if args.enable_hybrid:
+        pd_controller = PDController(kp=args.kp, kd=args.kd)
+        env = HybridControllerWrapper(env, pd_controller, lambda_pd=args.lambda_pd)
+        print(f"Hybrid controller enabled: lambda_pd={args.lambda_pd}, Kp={args.kp}, Kd={args.kd}")
+    
     env = Monitor(env, args.log_dir)
     env = DummyVecEnv([lambda: env])
 
