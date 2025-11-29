@@ -136,5 +136,6 @@ python system_id/estimate_parameters.py
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-**Author:** [Your Name]  
-**Contact:** [Your Email/LinkedIn]
+**Author:** Vaishnav AK  
+**Contact:** Email: vaishnavak001@gmail.com
+             LinkedIn:vaishnav-ak
