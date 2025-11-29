@@ -72,6 +72,9 @@ class OptimizedRewardWrapper(gym.Wrapper):
     def reset(self, **kwargs):
         self.steps_at_target = 0
         self.total_steps = 0
+        # Handle Gymnasium API compatibility
+        if 'options' in kwargs:
+            kwargs.pop('options')
         return self.env.reset(**kwargs)
     
     def step(self, action):
