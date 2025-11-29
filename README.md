@@ -73,6 +73,50 @@ python src/train_sac_msd.py --total_timesteps 10000
 python src/eval_ppo_msd.py --model_path results/final_model.zip
 ```
 
+## 🎛️ Classical vs RL Control
+
+### Classical Controllers
+
+The project includes implementations of classical control strategies for benchmarking:
+
+**PID Controller:**
+- Proportional-Integral-Derivative control
+- Control law: `u(t) = Kp*e(t) + Ki*∫e(τ)dτ + Kd*de(t)/dt`
+- Tunable gains: `kp`, `ki`, `kd`
+- Simple, interpretable, widely used
+
+**LQR Controller:**
+- Linear Quadratic Regulator (optimal control)
+- Control law: `u = -K*x` (K computed via Riccati equation)
+- State and control cost matrices: `Q`, `R`
+- Mathematically optimal for linear systems
+
+### Benchmark Comparison
+
+Compare all three approaches:
+
+```bash
+python controllers/benchmark.py --n_steps 500
+```
+
+**Sample Results (toy environment, 300 steps):**
+
+| Controller | Total Reward | Mean |Position| |
+|------------|--------------|----------------|
+| **PID** | -13.88 | 0.1466 |
+| **LQR** | -21.51 | 0.0546 |
+| **PPO** | -26.30 | 0.2266 |
+
+**Key Insights:**
+- **PID**: Best total reward, good balance of performance and simplicity
+- **LQR**: Lowest position error (0.0546), optimal for known linear systems
+- **PPO**: Competitive performance, learns without system model
+
+**When to Use Each:**
+- **Classical (PID/LQR)**: Known system dynamics, fast deployment, interpretability
+- **RL (PPO/SAC/TD3)**: Unknown dynamics, nonlinear systems, complex tasks
+
+
 ## 🔧 Available Environments
 
 ControlGym provides several linear control environments:
