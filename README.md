@@ -116,6 +116,24 @@ python controllers/benchmark.py --n_steps 500
 - **Classical (PID/LQR)**: Known system dynamics, fast deployment, interpretability
 - **RL (PPO/SAC/TD3)**: Unknown dynamics, nonlinear systems, complex tasks
 
+## 🔍 System Identification
+
+Estimate system parameters (mass, damping, stiffness) from data using Least Squares:
+
+```bash
+python system_id/estimate_parameters.py
+```
+
+**Method:**
+1. Collect trajectory data (acceleration, velocity, position, force)
+2. Formulate linear regression: `m*a + c*v + k*x = u`
+3. Solve for `[m, c, k]` using Least Squares
+
+**Accuracy:**
+- Typically achieves < 0.1% error on noise-free data
+- Robust to moderate measurement noise
+
+
 
 ## 🔧 Available Environments
 
