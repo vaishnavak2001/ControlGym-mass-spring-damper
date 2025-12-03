@@ -29,7 +29,11 @@ This project implements, trains, and benchmarks **PPO, SAC, and TD3** agents aga
     ```bash
     git clone https://github.com/yourusername/controlgym-rl.git
     cd controlgym-rl
+    # Install dependencies (verified on Python 3.13)
+    pip install numpy --upgrade
     pip install -r requirements.txt
+    pip install controlgym --no-deps
+    pip install scipy
     ```
 
 2.  **Run Baseline Training (PPO)**
