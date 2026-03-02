@@ -222,10 +222,11 @@ if st.button("🚀 Simulate Controllers", type="primary"):
         })
     
     metrics_df = pd.DataFrame(metrics)
-    st.table(metrics_df.style.format("{:.4f}"))
+    numeric_cols = ["Mean Abs Error", "Max Overshoot", "Total Energy"]
+    st.table(metrics_df.style.format({col: "{:.4f}" for col in numeric_cols}))
 
 else:
     st.info("Click 'Simulate Controllers' to run the simulation.")
 
 st.markdown("---")
-st.caption("ControlGym Dashboard | Level 12 Implementation")
+st.caption("ControlGym Dashboard — Mass-Spring-Damper Simulation | Built by Vaishnav AK")

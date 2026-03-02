@@ -1,7 +1,7 @@
-# RL and Classical Control for a Mass–Spring–Damper System using AGAI
+# RL and Classical Control for a Mass–Spring–Damper System
 
-**Author:** Autonomous Agent (AGAI)  
-**Date:** November 29, 2025
+**Author:** Vaishnav AK  
+**Date:** November 2025
 
 ## 1. Abstract
 
@@ -18,6 +18,7 @@ The system is governed by the second-order differential equation:
 $$ m \ddot{x} + c \dot{x} + k x = u $$
 
 Where:
+
 - $m$: Mass (kg)
 - $c$: Damping coefficient (N·s/m)
 - $k$: Spring stiffness (N/m)
@@ -31,6 +32,7 @@ $$ \dot{\mathbf{x}} = \begin{bmatrix} 0 & 1 \\ -k/m & -c/m \end{bmatrix} \mathbf
 ## 4. Classical Controllers
 
 ### 4.1 PID Controller
+
 The Proportional-Integral-Derivative (PID) controller minimizes error $e(t) = r(t) - x(t)$:
 
 $$ u(t) = K_p e(t) + K_i \int e(\tau) d\tau + K_d \frac{de(t)}{dt} $$
@@ -38,6 +40,7 @@ $$ u(t) = K_p e(t) + K_i \int e(\tau) d\tau + K_d \frac{de(t)}{dt} $$
 Tuned gains: $K_p=0.5, K_i=0.01, K_d=0.2$.
 
 ### 4.2 LQR Controller
+
 The Linear Quadratic Regulator (LQR) minimizes the infinite-horizon cost function:
 
 $$ J = \int_0^\infty (\mathbf{x}^T Q \mathbf{x} + u^T R u) dt $$
@@ -57,8 +60,9 @@ We employed **Proximal Policy Optimization (PPO)**, an on-policy gradient method
 ## 6. Robustness Tests
 
 To evaluate real-world applicability, we introduced:
-1.  **Gaussian Noise:** Added to observations ($\sigma = 0.05$).
-2.  **Impulse Disturbances:** Random external forces applied with 2% probability.
+
+1. **Gaussian Noise:** Added to observations ($\sigma = 0.05$).
+2. **Impulse Disturbances:** Random external forces applied with 2% probability.
 
 A **RobustControlWrapper** was implemented to simulate these conditions during both training and evaluation.
 
@@ -80,6 +84,6 @@ Classical LQR control remains superior for tracking accuracy when the system mod
 
 ## 9. References
 
-1.  Schulman, J., et al. "Proximal Policy Optimization Algorithms." arXiv preprint arXiv:1707.06347 (2017).
-2.  Åström, K. J., & Hägglund, T. "PID Controllers: Theory, Design, and Tuning." ISA (1995).
-3.  ControlGym Documentation. https://github.com/google-deepmind/control-gym
+1. Schulman, J., et al. "Proximal Policy Optimization Algorithms." arXiv preprint arXiv:1707.06347 (2017).
+2. Åström, K. J., & Hägglund, T. "PID Controllers: Theory, Design, and Tuning." ISA (1995).
+3. ControlGym Documentation. <https://github.com/google-deepmind/control-gym>
